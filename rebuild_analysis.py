@@ -157,17 +157,37 @@ def build():
     inp.widths = {1: 8, 2: 12, 3: 16, 4: 12, 5: 12, 6: 10, 7: 24, 8: 70, 9: 14, 10: 12, 11: 14, 12: 8, 13: 8, 14: 8, 15: 8, 16: 8}
 
     prod = S("Analisa_Produktivitas")
-    prod.add("Kode", "Jenis pekerjaan", "Alat", "Formula/parameter", "Produktivitas", "Satuan", "Koefisien jam", "Satuan koef.")
-    prod.add("GRD", "Grading/perataan", "AL-GRD", "Q=L x V x 1.000 x Fa", "=Asumsi!B39*Asumsi!B40*Asumsi!B41", "m2/jam", "=1/E2", "jam/m2")
-    prod.add("RIP", "Ripping/penggemburan", "AL-DZR", "Q Bulldozer SE-DJBK", "=Asumsi!B26", "m3/jam", "=1/E3", "jam/m3")
-    prod.add("SPR", "Spreading/penyebaran", "AL-DZR", "Q Bulldozer SE-DJBK", "=Asumsi!B26", "m3/jam", "=1/E4", "jam/m3")
-    prod.add("CMP", "Compacting/pemadatan", "AL-RLR", "Q=L x V x 1.000 x Fa/n", "=Asumsi!B43*Asumsi!B44*Asumsi!B45*1000/Asumsi!B42", "m3/jam", "=1/E5", "jam/m3")
-    prod.add("DRN", "Drainase/galian", "AL-EXC", "Q=Kb x Fb x Fa x 60/Ts", "=Asumsi!B46*Asumsi!B47*Asumsi!B48*60/Asumsi!B49", "m3/jam", "=1/E6", "jam/m3")
-    prod.add("SUB", "Perbaikan tanah dasar", "AL-EXC", "Q excavator SE-DJBK", "=Asumsi!B46*Asumsi!B47*Asumsi!B48*60/Asumsi!B49", "m3/jam", "=1/E7", "jam/m3")
-    prod.add("BSC", "Basecourse baru", "AL-DZR", "Q Bulldozer SE-DJBK", "=Asumsi!B26", "m3/jam", "=1/E8", "jam/m3")
-    prod.add("PTH", "Patching lubang", "AL-EXC", "Q excavator SE-DJBK", "=Asumsi!B46*Asumsi!B47*Asumsi!B48*60/Asumsi!B49", "m3/jam", "=1/E9", "jam/m3")
-    prod.add("SEM", "Semenisasi", "MAN", "Pekerjaan manual; alat berat tidak dihitung", 0, "m2/jam", 0, "jam/m2")
+    prod.add("Kode", "Jenis pekerjaan", "Alat", "Formula/parameter", "Produktivitas", "Satuan", "Koefisien jam", "Satuan koef.", "Kode AHSP", "Halaman acuan")
+    prod.add("GRD", "Grading/perataan", "AL-GRD", "Q=L x V x 1.000 x Fa", "=Asumsi!B39*Asumsi!B40*Asumsi!B41", "m2/jam", "=1/E2", "jam/m2", "AHSP-SDA-GRD-PROV", "Lampiran IV; halaman belum terverifikasi")
+    prod.add("RIP", "Ripping/penggemburan", "AL-DZR", "Q Bulldozer SE-DJBK", "=Asumsi!B26", "m3/jam", "=1/E3", "jam/m3", "AHSP-SDA-RIP-PROV", "Lampiran IV; halaman belum terverifikasi")
+    prod.add("SPR", "Spreading/penyebaran", "AL-DZR", "Q Bulldozer SE-DJBK", "=Asumsi!B26", "m3/jam", "=1/E4", "jam/m3", "AHSP-SDA-SPR-PROV", "Lampiran IV; halaman belum terverifikasi")
+    prod.add("CMP", "Compacting/pemadatan", "AL-RLR", "Q=L x V x 1.000 x Fa/n", "=Asumsi!B43*Asumsi!B44*Asumsi!B45*1000/Asumsi!B42", "m3/jam", "=1/E5", "jam/m3", "AHSP-SDA-CMP-PROV", "Lampiran IV; halaman belum terverifikasi")
+    prod.add("DRN", "Drainase/galian", "AL-EXC", "Q=Kb x Fb x Fa x 60/Ts", "=Asumsi!B46*Asumsi!B47*Asumsi!B48*60/Asumsi!B49", "m3/jam", "=1/E6", "jam/m3", "A.3.01.1a", "Sekitar hal. 324; verifikasi terhadap edisi PDF")
+    prod.add("SUB", "Perbaikan tanah dasar", "AL-EXC", "Q excavator SE-DJBK", "=Asumsi!B46*Asumsi!B47*Asumsi!B48*60/Asumsi!B49", "m3/jam", "=1/E7", "jam/m3", "AHSP-SDA-SUB-PROV", "Lampiran IV; halaman belum terverifikasi")
+    prod.add("BSC", "Basecourse baru", "AL-DZR", "Q Bulldozer SE-DJBK", "=Asumsi!B26", "m3/jam", "=1/E8", "jam/m3", "AHSP-SDA-BSC-PROV", "Lampiran IV; halaman belum terverifikasi")
+    prod.add("PTH", "Patching lubang", "AL-EXC", "Q excavator SE-DJBK", "=Asumsi!B46*Asumsi!B47*Asumsi!B48*60/Asumsi!B49", "m3/jam", "=1/E9", "jam/m3", "AHSP-SDA-PTH-PROV", "Lampiran IV; halaman belum terverifikasi")
+    prod.add("SEM", "Semenisasi", "MAN", "Pekerjaan manual; alat berat tidak dihitung", 0, "m2/jam", 0, "jam/m2", "AHSP-SDA-SEM-PROV", "Lampiran IV; halaman belum terverifikasi")
     prod.widths = {1: 14, 2: 28, 3: 14, 4: 24, 5: 16, 6: 12, 7: 18, 8: 14}
+
+    ref = S("Referensi_AHSP")
+    ref.add("Kode analisa", "Uraian pekerjaan", "Kode AHSP", "Alat/tenaga", "Dasar perhitungan jam alat", "Halaman PDF", "Status")
+    for row in [
+        ("GRD", "Grading/perataan", "AHSP-SDA-GRD-PROV", "AL-GRD", "Luas / produktivitas grader", "Belum terverifikasi", "Kode internal sementara"),
+        ("RIP", "Ripping/penggemburan", "AHSP-SDA-RIP-PROV", "AL-DZR", "Volume / Q dozer", "Belum terverifikasi", "Kode internal sementara"),
+        ("SPR", "Spreading/penyebaran", "AHSP-SDA-SPR-PROV", "AL-DZR", "Volume / Q dozer", "Belum terverifikasi", "Kode internal sementara"),
+        ("CMP", "Compacting/pemadatan", "AHSP-SDA-CMP-PROV", "AL-RLR + AL-WTR", "Volume / Q roller; air dihitung terpisah", "Belum terverifikasi", "Kode internal sementara"),
+        ("DRN", "Drainase/galian", "A.3.01.1a", "AL-EXC", "Volume galian / Q excavator", "Sekitar 324", "Perlu dicocokkan dengan PDF sumber"),
+        ("SUB", "Perbaikan tanah dasar", "AHSP-SDA-SUB-PROV", "AL-EXC", "Volume / Q excavator", "Belum terverifikasi", "Kode internal sementara"),
+        ("BSC", "Basecourse baru", "AHSP-SDA-BSC-PROV", "AL-DZR + AL-RLR", "Volume basecourse / produktivitas pekerjaan", "Belum terverifikasi", "Kode internal sementara"),
+        ("PTH", "Patching lubang", "AHSP-SDA-PTH-PROV", "AL-EXC", "Volume patching / Q excavator", "Belum terverifikasi", "Kode internal sementara"),
+        ("SEM", "Semenisasi", "AHSP-SDA-SEM-PROV", "Tenaga manual", "Tidak ada jam alat berat pada model ini", "Belum terverifikasi", "Kode internal sementara"),
+    ]:
+        ref.add(*row)
+    ref.add()
+    ref.add("Catatan penting")
+    ref.add("Nomor halaman resmi selain rujukan contoh galian belum diisi karena file PDF SE-DJBK No. 68/2024 Lampiran IV tidak tersedia di workspace saat workbook dibuat.")
+    ref.add("Kode AHSP-SDA-*-PROV adalah kode internal analisa, bukan nomor item resmi. Ganti setelah PDF sumber dan edisi halaman dikonfirmasi.")
+    ref.widths = {1: 16, 2: 28, 3: 24, 4: 20, 5: 42, 6: 22, 7: 34}
 
     jam = S("Analisa_Jam_Alat")
     jam.add("No", "Afdeling", "Blok", "Panjang m", "Luas m2", "Vol olah m3", "Vol drainase m3", "Jam GRD", "Jam DZR", "Jam RLR", "Jam EXC", "Jam WTR", "Total jam", "Biaya alat Rp", "Kode pekerjaan terdeteksi", "Kode alat")
@@ -220,7 +240,7 @@ def build():
     rec.add("Air semenisasi", f"=SUM(Kebutuhan_Material!L2:L{n})", "m3")
     rec.widths = {1: 30, 2: 18, 3: 18, 4: 20}
 
-    sheets = [guide, asum, work, alat, inp, prod, jam, mat, rec]
+    sheets = [guide, asum, work, alat, inp, prod, jam, mat, rec, ref]
     content = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>''' + "".join(f'<Override PartName="/xl/worksheets/sheet{i}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' for i in range(1, len(sheets)+1)) + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'
     wb = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>''' + "".join(f'<sheet name="{esc(s.name)}" sheetId="{i}" r:id="rId{i}"/>' for i,s in enumerate(sheets,1)) + '</sheets><calcPr calcMode="auto" fullCalcOnLoad="1" forceFullCalc="1"/></workbook>'
