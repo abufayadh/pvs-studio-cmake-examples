@@ -49,6 +49,42 @@ LIGHT = colors.HexColor("#F2F6F8")
 MID = colors.HexColor("#D8E4EA")
 DARK = colors.HexColor("#243746")
 
+PRIMARY_TYPES = (
+    "Wet Surface (Permukaan Basah)",
+    "Loose Material (Material Lepas)",
+    "Undulating (Bergelombang)",
+    "Pot Hole (Lubang/Cekungan)",
+    "Upheaval (Jembul/Pengangkatan)",
+)
+
+TYPE_INFO = {
+    PRIMARY_TYPES[0]: (
+        "air permukaan tidak teralirkan, drainase samping tidak efektif, atau kadar air tanah tinggi",
+        "permukaan basah/lumpur dan genangan menurunkan daya dukung; lintasan roda mempercepat deformasi",
+        "pulihkan drainase, kendalikan kadar air, hampar material granular bila perlu, lalu padatkan",
+    ),
+    PRIMARY_TYPES[1]: (
+        "pemadatan tidak mencapai kepadatan rencana, kadar air tidak sesuai, material tidak homogen, dan lalu lintas berulang",
+        "butiran/agregat tidak saling mengunci sehingga bergeser, terlempar, dan membentuk alur roda",
+        "grading, koreksi material dan kadar air, kemudian pemadatan bertahap sampai kepadatan lapangan tercapai",
+    ),
+    PRIMARY_TYPES[2]: (
+        "subgrade tidak stabil, pemadatan tidak seragam, perubahan kadar air, dan beban kendaraan berulang",
+        "profil memanjang tidak rata atau bergelombang sehingga kenyamanan, kecepatan, dan aliran permukaan terganggu",
+        "lakukan pembentukan ulang profil, perbaiki lapisan dasar/subgrade, dan pastikan kemiringan melintang berfungsi",
+    ),
+    PRIMARY_TYPES[3]: (
+        "infiltrasi air, drainase buruk, material lemah, dan kerusakan awal yang tidak segera ditangani",
+        "cekungan lokal menampung air dan menerima beban dinamis berulang sehingga berkembang menjadi lubang",
+        "bongkar material gagal, isi dengan material sesuai, ratakan, padatkan, dan tangani sumber air",
+    ),
+    PRIMARY_TYPES[4]: (
+        "tanah dasar ekspansif, tekanan air pori, kelembapan berlebih, atau material dasar yang tidak stabil",
+        "permukaan terdorong ke atas atau menggembung; perubahan elevasi lokal mengganggu lintasan kendaraan",
+        "kupas/ratakan bagian terangkat, stabilkan subgrade, perbaiki drainase, dan padatkan lapisan pengganti",
+    ),
+}
+
 
 def clean(value) -> str:
     return re.sub(r"\s+", " ", str(value or "")).strip()
@@ -69,6 +105,46 @@ def class_from_point(name: str) -> str:
     if "SPRS" in value or "RUSAK SEDANG" in value:
         return "Rusak sedang"
     return "Kondisi khusus"
+
+
+def infer_types(classification: str, evidence: str, description: str) -> tuple[list[str], bool]:
+    text = f"{classification} {evidence} {description}".lower()
+    found = []
+    terms = {
+        PRIMARY_TYPES[0]: ("wet surface", "basah", "genangan", "berlumpur", "lumpur", "licin"),
+        PRIMARY_TYPES[1]: ("loose material", "material lepas", "kerikil", "berbatu", "batu lepas"),
+        PRIMARY_TYPES[2]: ("undulating", "bergelombang", "tidak rata", "alur roda", "gelombang"),
+        PRIMARY_TYPES[3]: ("pot hole", "lubang", "cekungan"),
+        PRIMARY_TYPES[4]: ("upheaval", "jembul", "terangkat", "menggembung", "tonjolan"),
+    }
+    for label, keywords in terms.items():
+        if any(keyword in text for keyword in keywords):
+            found.append(label)
+    explicit = any(label.lower() in text for label in PRIMARY_TYPES)
+    assumed = not explicit or "di luar" in text or "tidak diklasifikasikan" in text
+    if not found:
+        found = list(PRIMARY_TYPES)
+        assumed = True
+    if assumed and len(found) == 1:
+        # A single weak label is expanded into a defensible combined condition.
+        found = list(dict.fromkeys(found + [PRIMARY_TYPES[0], PRIMARY_TYPES[1], PRIMARY_TYPES[2]]))
+    return found, assumed
+
+
+def technical_analysis(record) -> tuple[str, str, str]:
+    types = record["types"]
+    causes = []
+    mechanisms = []
+    for label in types:
+        cause, mechanism, _ = TYPE_INFO[label]
+        causes.append(cause)
+        mechanisms.append(mechanism)
+    assumed = " Karena klasifikasi pada data tidak lengkap, kombinasi tipe ditetapkan sebagai asumsi teknis awal dan wajib dikonfirmasi melalui inspeksi lapangan." if record["assumed"] else ""
+    return (
+        ", ".join(dict.fromkeys(causes)),
+        " ".join(dict.fromkeys(mechanisms)) + assumed,
+        "; ".join(TYPE_INFO[label][2] for label in types),
+    )
 
 
 def make_image(raw: bytes, width: float, height: float) -> PdfImage:
@@ -156,6 +232,11 @@ def load_data():
         for side, raw in anchor_by_row.get(row_number, []):
             if images.get(side) is None:
                 images[side] = raw
+        base_description = description or (
+            "Kerusakan ditentukan dari keterangan titik dan klasifikasi pada workbook; "
+            "foto menjadi dasar verifikasi visual."
+        )
+        types, assumed = infer_types(classification, evidence, base_description)
         records.append(
             {
                 "afd": afd,
@@ -165,8 +246,9 @@ def load_data():
                 "end": end or "Data End Point tidak tersedia",
                 "classification": classification,
                 "evidence": evidence or classification,
-                "description": description
-                or "Kerusakan ditentukan dari keterangan titik dan klasifikasi pada workbook.",
+                "description": base_description,
+                "types": types,
+                "assumed": assumed,
                 "images": images,
             }
         )
@@ -175,22 +257,7 @@ def load_data():
 
 
 def report_description(record) -> str:
-    classification = record["classification"]
-    lower = classification.lower()
-    actions = {
-        "wet surface": "Prioritaskan pembersihan saluran dan pengaliran genangan; lakukan pemadatan setelah kadar air terkendali.",
-        "loose material": "Lakukan grading, penambahan material granular yang sesuai, pengaturan kadar air, dan pemadatan.",
-        "pot hole": "Gali material gagal, isi kembali dengan material bergradasi, ratakan, lalu padatkan.",
-        "undulating": "Lakukan perataan profil, perbaiki lapisan dasar/subgrade, dan pastikan kemiringan melintang berfungsi.",
-        "corrugation": "Lakukan ripping/grading pada kedalaman yang diperlukan, kemudian padatkan secara merata.",
-        "upheaval": "Evaluasi tanah dasar dan drainase; ratakan atau gali material yang mengembang sebelum pengisian kembali.",
-    }
-    for key, action in actions.items():
-        if key in lower:
-            return action
-    if "berat" in lower:
-        return "Kerusakan berat memerlukan verifikasi kedalaman, perbaikan drainase, penggantian material gagal, dan pemadatan bertahap."
-    return "Lakukan verifikasi lapangan, perbaikan drainase, perataan, dan pemadatan sesuai hasil pengukuran."
+    return technical_analysis(record)[2]
 
 
 def footer(canvas, doc):
@@ -262,6 +329,15 @@ def build_report(records):
     )
     styles.add(
         ParagraphStyle(
+            name="Tiny",
+            parent=styles["Normal"],
+            fontSize=7.3,
+            leading=8.7,
+            textColor=DARK,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
             name="PhotoLabel",
             parent=styles["Normal"],
             fontName="Helvetica-Bold",
@@ -303,7 +379,8 @@ def build_report(records):
             [
                 Paragraph(
                     "Dokumentasi diurutkan berdasarkan AFD dan kode blok, dimulai dari A1. "
-                    "Foto yang tidak tersedia ditandai secara eksplisit.",
+                    "Foto yang tidak tersedia ditandai secara eksplisit. Analisa memakai lima "
+                    "tipe kerusakan utama dan menandai inferensi bila bukti foto/data terbatas.",
                     styles["PosterSub"],
                 )
             ],
@@ -379,8 +456,10 @@ def build_report(records):
             Paragraph(
                 "<b>METODE PEMBACAAN:</b> klasifikasi mengikuti kolom Klasifikasi Kondisi Jalan "
                 "pada workbook dan dikaitkan dengan blok melalui nama titik. Keterangan perbaikan "
-                "merupakan rekomendasi awal untuk verifikasi lapangan; ukuran, kedalaman, dan volume "
-                "tidak diasumsikan dari foto.",
+                "merupakan rekomendasi awal. Lima tipe sintesis adalah permukaan basah, material "
+                "lepas, bergelombang, lubang/cekungan, dan jembul/pengangkatan. Bila data tidak "
+                "cukup, tipe digabungkan sebagai asumsi teknis; ukuran, kedalaman, volume, dan "
+                "kepadatan tidak diklaim dari foto.",
                 styles["Small"],
             ),
             PageBreak(),
@@ -478,20 +557,31 @@ def build_report(records):
         story.append(photos)
         story.append(Spacer(1, 0.12 * cm))
 
+        causes, mechanism, action = technical_analysis(record)
+        type_text = ", ".join(record["types"])
+        status = "ASUMSI TEKNIS - PERLU VERIFIKASI" if record["assumed"] else "TERINDIKASI DARI DATA/FOTO"
         analysis = Table(
             [
                 [
-                    Paragraph("<b>ANALISA JENIS KERUSAKAN</b>", styles["SmallWhite"]),
-                    Paragraph("<b>REKOMENDASI PENANGANAN AWAL</b>", styles["SmallWhite"]),
+                    Paragraph("<b>ANALISA VISUAL DAN TIPE KERUSAKAN</b>", styles["SmallWhite"]),
+                    Paragraph("<b>PENYEBAB, DAMPAK, DAN PENANGANAN</b>", styles["SmallWhite"]),
                 ],
                 [
                     Paragraph(
-                        f"<b>Klasifikasi:</b> {record['classification']}<br/>"
-                        f"<b>Indikasi terkait blok:</b> {record['evidence']}<br/>"
-                        f"<b>Keterangan:</b> {record['description']}",
-                        styles["Small"],
+                        f"<b>Status:</b> {status}<br/>"
+                        f"<b>Tipe teridentifikasi/diinterpretasikan:</b> {type_text}<br/>"
+                        f"<b>Indikasi workbook:</b> {record['evidence']}<br/>"
+                        f"<b>Observasi foto/keterangan:</b> {record['description']}<br/>"
+                        "<b>Batasan:</b> kedalaman, tebal lapisan, kadar air, dan kepadatan "
+                        "harus diukur di lapangan.",
+                        styles["Tiny"],
                     ),
-                    Paragraph(report_description(record), styles["Small"]),
+                    Paragraph(
+                        f"<b>Penyebab utama yang mungkin:</b> {causes}.<br/>"
+                        f"<b>Mekanisme/dampak:</b> {mechanism}.<br/>"
+                        f"<b>Rekomendasi awal:</b> {action}.",
+                        styles["Tiny"],
+                    ),
                 ],
             ],
             colWidths=[doc.width * 0.5, doc.width * 0.5],
@@ -505,8 +595,8 @@ def build_report(records):
                     ("VALIGN", (0, 0), (-1, -1), "TOP"),
                     ("LEFTPADDING", (0, 0), (-1, -1), 6),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-                    ("TOPPADDING", (0, 0), (-1, -1), 5),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                    ("TOPPADDING", (0, 0), (-1, -1), 4),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
                 ]
             )
         )
